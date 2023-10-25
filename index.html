@@ -1,0 +1,88 @@
+<html>
+    <head>
+	<meta charset="utf8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+	<meta name="theme-color" content="#000000">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <title>CASTINGDIRECTOR</title>
+        <link rel="stylesheet" media="screen" href="https://fontlibrary.org//face/consolamono" type="text/css"/> 
+        <link rel="stylesheet" href="styles.css"/>
+    </head>
+    <body>
+        <h4 id="page_title">Выберите пост:</h4>
+        <div class="input_box">
+            <input class="page_input_box" placeholder="7/1441"/>
+            <div class="navigation_button_box">
+                <button class="page_input_go" id="button_read" style="margin-right: 5px">Читать</button>
+                <button class="page_input_go" id="button_next" style="margin-left: 5px">Далее</button>
+            </div>
+        </div>
+        <div class="info_box">
+        </div>
+        <div class="content_box">
+        </div>
+        <script src="js/database.js"></script>
+	<script src="js/sql.js"></script>
+        <script>
+            function format_text(text) {
+                return `<p style='margin-top: 0'>${text}</p>`;
+            }
+            async function loader() {
+                let connector = await initSqlJs();
+
+                const db = new connector.Database(window.byte_array);
+
+                let info_box = document.querySelector('.info_box');
+
+                document.querySelector('#button_read').addEventListener('click', () => {
+                    let content_box = document.querySelector('.content_box');
+                    let page_number = document.querySelector('.page_input_box').value;
+                    page_number = parseInt(page_number);
+
+                    if (page_number == NaN) return;
+
+                    const result = db.exec('SELECT * FROM posts WHERE id >=' + page_number + ' and text <> \'\'');
+                    
+                    if (result.length == 0) {
+                        alert('Пост не был найден!');
+                        return;
+                    }
+
+                    const post = result[0].values[0];
+
+                    const text = post[1];
+                    const date = post[2];
+
+                    info_box.innerHTML = `<p style='margin-bottom: 4px'>ID: ${post[0]}</p>Date: ${date}`
+
+                    content_box.innerHTML = format_text(text);
+                    window.current_post_id = page_number;
+
+                    document.querySelector('#button_next').addEventListener('click', () => {
+                        let last_post_id = window.current_post_id;
+
+                        const result = db.exec('SELECT * FROM posts WHERE id > ' + last_post_id + ' and text <> \'\'');
+                        
+                        if (result.length == 0) {
+                            return;
+                        }
+
+                        console.log(result);
+
+                        const post = result[0].values[0];
+
+                        const text = post[1];
+                        const date = post[2];
+
+                        info_box.innerHTML = `<p style='margin-bottom: 4px'>ID: ${post[0]}</p>Date: ${date}`
+
+                        content_box.innerHTML = format_text(text);
+                        window.current_post_id = post[0]; // ID
+                    });
+                });
+            }
+
+            loader().catch((error) => alert('Не удалось загрузить базу данных!'));
+        </script>
+    </body>
+</html>
